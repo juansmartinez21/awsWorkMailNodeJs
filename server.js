@@ -1,3 +1,4 @@
+const userData = require('./data');
 const { WorkMail, createUser } = require("@aws-sdk/client-workmail");
 var config = require("./config");
 
@@ -11,17 +12,6 @@ var workmail = new WorkMail({
 });
 
 
-var name = 'l.vaquero';
-var displayName = 'L. Vaquero';
-var organizationId = 'm-6401ec4caa7a490a9eb4c9570f458c02'
-
-var params = {
-    DisplayName: displayName, /* required */
-    Name: name, /* required */
-    OrganizationId: organizationId, /* required */
-    Password: 'Provisional2022' /* required */
-};
-
 const myPromise = (params) => {
     return new Promise(
         (resolve, reject) =>
@@ -30,25 +20,25 @@ const myPromise = (params) => {
                 if(err) reject(err.stack); // an error occurred
                 else {
                     console.log('User created succesfully');
-                    resolve(data ) 
+                    resolve(data) 
                 }
             });
         }
     )
 }
 
-const myPromise2 = (userId) => {
+
+const myPromise2 = (userId, name, userEmail) => {
     var params = {
-        Email: name+'@korngroup.com.co', 
+        Email: userEmail+'@'+config.DOMAIN, 
         EntityId: userId, 
-        OrganizationId: organizationId
+        OrganizationId: config.ORGANIZATION_ID
       };
     return new Promise((resolve, reject) => {               
-          console.log("--------------");
-          console.log(params);
           workmail.registerToWorkMail(params, function(err, data) {
             if (err) reject(err.stack); // an error occurred
             else {
+                console.log(params);          
                 console.log('User registered to workmail succesfully');
                 resolve(data);           
             }   
@@ -57,7 +47,27 @@ const myPromise2 = (userId) => {
     
 } 
 
-myPromise(params)
-.then((data) => { myPromise2(data.UserId)})
-.catch((error) => { console.error(error)})
+const main = async() => {
+    for(let i = 0; i < userData.length; i++)
+    {
+        let userName = userData[i].name
+        let userEmail = userData[i].email
+        var params = {
+            DisplayName: userName, 
+            Name: userEmail, 
+            OrganizationId: config.ORGANIZATION_ID,
+            Password: 'Provisional2022' 
+        }
+        console.log(params) 
+        console.log(i)    
+        try{
+            let data = await myPromise(params);
+            await myPromise2(data.UserId, userName, userEmail);            
+        }
+        catch(error){
+            console.error(error)
+        }
+    }
+}
 
+main();
